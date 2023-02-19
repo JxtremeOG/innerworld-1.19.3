@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "innerworld",
+	"version": "${version}",
+	"name": "Inner World",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"JxtremeOG!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/innerworld/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.jxtremeog.innerworld.InnerWorld"
+		],
+		"client: ": [
+			"net.jxtremeog.innerworld.InnerWorldClient"
+		],
+		"fabric-datagen": [
+			"net.jxtremeog.innerworld.InnerWorldDataGenerator"
+		]
+	},
+	"mixins": [
+		"innerworld.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.14.14",
+		"minecraft": "~1.19.3",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
