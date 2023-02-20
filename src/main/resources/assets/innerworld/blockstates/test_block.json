@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": {"model": "innerworld:block/test_block"}
+  }
+}

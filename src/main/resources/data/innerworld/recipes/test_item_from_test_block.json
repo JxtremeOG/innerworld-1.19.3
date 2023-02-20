@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "innerworld:test_block"
+    }
+  ],
+  "result": {
+    "item": "innerworld:test_item",
+    "count": 9
+  }
+}
