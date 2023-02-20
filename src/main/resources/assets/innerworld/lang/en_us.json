@@ -2,6 +2,7 @@
   "item.innerworld.test_item": "Test Item",
 
   "block.innerworld.test_block": "Test Block",
+  "block.innerworld.auto_enchant_block": "Enfuser",
 
   "itemgroup.innerworld": "Inner World"
 }

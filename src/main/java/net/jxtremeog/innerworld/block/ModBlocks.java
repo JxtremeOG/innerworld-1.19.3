@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.jxtremeog.innerworld.InnerWorld;
+import net.jxtremeog.innerworld.block.custom.AutoEnchantBlock;
 import net.jxtremeog.innerworld.item.ModItemGroup;
 import net.minecraft.block.Block;
 import net.minecraft.block.Material;
@@ -17,6 +18,10 @@ import net.minecraft.util.Identifier;
 public class ModBlocks {
     public static final Block TEST_BLOCK = registerBlock("test_block",
             new Block(FabricBlockSettings.of(Material.METAL)
+                    .strength(4.0f).requiresTool()),
+            ModItemGroup.INNERWORLD);
+    public static final Block AUTO_ENCHANT_BLOCK = registerBlock("auto_enchant_block",
+            new AutoEnchantBlock(FabricBlockSettings.of(Material.METAL)
                     .strength(4.0f).requiresTool()),
             ModItemGroup.INNERWORLD);
 
