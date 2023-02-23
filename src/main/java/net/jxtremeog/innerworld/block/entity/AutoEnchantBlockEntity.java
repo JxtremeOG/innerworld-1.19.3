@@ -1,6 +1,10 @@
 package net.jxtremeog.innerworld.block.entity;
 
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.jxtremeog.innerworld.item.ModItems;
+import net.jxtremeog.innerworld.networking.ModMessages;
 import net.jxtremeog.innerworld.screen.AutoEnchantScreenHandler;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -12,10 +16,14 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemStackSet;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
@@ -138,4 +146,34 @@ public class AutoEnchantBlockEntity extends BlockEntity implements NamedScreenHa
         return inventory.getStack(2).getMaxCount() > inventory.getStack(2).getCount() + count;
     }
 
+    public ItemStack getRenderStack() {
+        if(this.getStack(2).isEmpty()) {
+            return this.getStack(1);
+        } else {
+            return this.getStack(2);
+        }
+    }
+
+    public void setInventory(DefaultedList<ItemStack> list) {
+        for (int i = 0; i < inventory.size(); i++) {
+            this.inventory.set(i, inventory.get(i));
+        }
+    }
+
+    @Override
+    public void markDirty() {
+        if(!world.isClient()) {
+            PacketByteBuf data = PacketByteBufs.create();
+            data.writeInt(inventory.size());
+            for(int i = 0; i < inventory.size(); i++) {
+                data.writeItemStack(inventory.get(i));
+            }
+            data.writeBlockPos(getPos());
+
+            for (ServerPlayerEntity player : PlayerLookup.tracking((ServerWorld) world, getPos())) {
+                ServerPlayNetworking.send(player, ModMessages.ITEM_SYNC, data);
+            }
+        }
+        super.markDirty();
+    }
 }

@@ -6,6 +6,7 @@ import net.jxtremeog.innerworld.block.ModBlocks;
 import net.jxtremeog.innerworld.block.entity.ModBlockEntities;
 import net.jxtremeog.innerworld.item.ModItemGroup;
 import net.jxtremeog.innerworld.item.ModItems;
+import net.jxtremeog.innerworld.networking.ModMessages;
 import net.jxtremeog.innerworld.screen.ModScreenHandlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,5 +22,7 @@ public class InnerWorld implements ModInitializer {
 		ModBlocks.registerModBlocks();
 		ModBlockEntities.registerBlockEntities();
 		ModScreenHandlers.registerAllScreenHandler();
+		ModMessages.registerC2SPackets();
+		ModMessages.registerS2CPackets();
 	}
 }

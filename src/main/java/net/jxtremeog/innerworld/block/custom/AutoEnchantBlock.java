@@ -6,8 +6,13 @@ import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.UnbreakingEnchantment;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
@@ -15,10 +20,16 @@ import net.minecraft.state.property.Properties;
 import net.minecraft.util.*;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.random.Random;
+import net.minecraft.util.math.random.RandomSplitter;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 
 public class AutoEnchantBlock extends BlockWithEntity implements BlockEntityProvider {
     public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
@@ -68,6 +79,59 @@ public class AutoEnchantBlock extends BlockWithEntity implements BlockEntityProv
         }
     }
 
+    Random random = new Random() {
+        @Override
+        public Random split() {
+            return null;
+        }
+
+        @Override
+        public RandomSplitter nextSplitter() {
+            return null;
+        }
+
+        @Override
+        public void setSeed(long seed) {
+
+        }
+
+        @Override
+        public int nextInt() {
+            return 0;
+        }
+
+        @Override
+        public int nextInt(int bound) {
+            return 0;
+        }
+
+        @Override
+        public long nextLong() {
+            return 0;
+        }
+
+        @Override
+        public boolean nextBoolean() {
+            return false;
+        }
+
+        @Override
+        public float nextFloat() {
+            return 0;
+        }
+
+        @Override
+        public double nextDouble() {
+            return 0;
+        }
+
+        @Override
+        public double nextGaussian() {
+            return 0;
+        }
+    };
+    java.util.Random rn = new java.util.Random();
+
     /**
     Executed when block is right-clicked
      */
@@ -75,10 +139,29 @@ public class AutoEnchantBlock extends BlockWithEntity implements BlockEntityProv
     public ActionResult onUse(BlockState state, World world, BlockPos pos,
                               PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
-            NamedScreenHandlerFactory screenHandlerFactory = state.createScreenHandlerFactory(world, pos);
+            if(hand == Hand.MAIN_HAND && player.getStackInHand(hand).isEnchantable() ){
+                List list = Registries.ENCHANTMENT.stream().filter(Enchantment::isAvailableForEnchantedBookOffer).collect(Collectors.toList());
+                Enchantment enchantment = null;
+                while(enchantment == null || !(enchantment.isAcceptableItem(player.getStackInHand(hand)))){
+                    enchantment = (Enchantment)list.get(rn.nextInt(list.size()));
+                }
+                int maxLevel = 1;
+                if(enchantment.getMaxLevel() == 2)
+                    maxLevel = 3;
+                else if(enchantment.getMaxLevel() == 3)
+                    maxLevel = 5;
+                else if(enchantment.getMaxLevel() == 4)
+                    maxLevel = 7;
+                else if(enchantment.getMaxLevel() == 5)
+                    maxLevel = 10;
 
-            if (screenHandlerFactory != null) {
-                player.openHandledScreen(screenHandlerFactory);
+                player.getStackInHand(hand).addEnchantment(enchantment, rn.nextInt(maxLevel)+1);
+            }else {
+                if(player.getStackInHand(hand).hasEnchantments()){
+                    System.out.println(player.getStackInHand(hand).getEnchantments());
+                }else {
+                    System.out.println("Its not enchantable");
+                }
             }
         }
 
