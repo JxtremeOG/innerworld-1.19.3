@@ -3,91 +3,47 @@ package net.jxtremeog.innerworld.block.entity;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.jxtremeog.innerworld.item.ModItems;
 import net.jxtremeog.innerworld.networking.ModMessages;
-import net.jxtremeog.innerworld.screen.AutoEnchantScreenHandler;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemStackSet;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.screen.PropertyDelegate;
-import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
+import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
-public class AutoEnchantBlockEntity extends BlockEntity implements NamedScreenHandlerFactory, ImplementedInventory {
+public class AutoEnchantBlockEntity extends BlockEntity {
     private final DefaultedList<ItemStack> inventory =
-            DefaultedList.ofSize(3, ItemStack.EMPTY);
-
-    protected final PropertyDelegate propertyDelegate;
+            DefaultedList.ofSize(1, ItemStack.EMPTY);
     private int progress = 0;
-    private int maxProgress = 72;
+    private final int maxProgress = 60;
 
     public AutoEnchantBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.AUTO_ENCHANT_TABLE, pos, state);
-        this.propertyDelegate = new PropertyDelegate() {
-            public int get(int index) {
-                switch (index) {
-                    case 0: return AutoEnchantBlockEntity.this.progress;
-                    case 1: return AutoEnchantBlockEntity.this.maxProgress;
-                    default: return 0;
-                }
-            }
-
-            public void set(int index, int value) {
-                switch(index) {
-                    case 0: AutoEnchantBlockEntity.this.progress = value; break;
-                    case 1: AutoEnchantBlockEntity.this.maxProgress = value; break;
-                }
-            }
-
-            public int size() {
-                return 2;
-            }
-        };
     }
-    @Override
-    public DefaultedList<ItemStack> getItems() {
+    public DefaultedList<ItemStack> getItemsinTable() {
         return this.inventory;
     }
-
-    @Override
-    public Text getDisplayName() {
-        return Text.literal("Auto Enchant Table");
-    }
-
-    @Nullable
-    @Override
-    public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
-        return new AutoEnchantScreenHandler(syncId, inv, this, this.propertyDelegate);
-    }
-
     @Override
     protected void writeNbt(NbtCompound nbt) {
         super.writeNbt(nbt);
-        Inventories.writeNbt(nbt, inventory);
+        Inventories.writeNbt(nbt, inventory, true);
         nbt.putInt("auto_enchant_table.progress", progress);
     }
 
     @Override
     public void readNbt(NbtCompound nbt) {
-        Inventories.readNbt(nbt, inventory);
         super.readNbt(nbt);
+        inventory.clear();
+        Inventories.readNbt(nbt, inventory);
         progress = nbt.getInt("auto_enchant_table.progress");
     }
     private void resetProgress() {
@@ -97,12 +53,12 @@ public class AutoEnchantBlockEntity extends BlockEntity implements NamedScreenHa
         if(world.isClient()) {
             return;
         }
-
-        if(hasRecipe(entity)){
+        if(entity.inventory.get(0) != ItemStack.EMPTY){
             entity.progress++;
             markDirty(world, blockPos, blockState);
             if(entity.progress >= entity.maxProgress) {
-                craftItem(entity);
+                entity.popOutOfInventory();
+                entity.resetProgress();
             }
         }else {
             entity.resetProgress();
@@ -110,55 +66,6 @@ public class AutoEnchantBlockEntity extends BlockEntity implements NamedScreenHa
         }
     }
 
-    private static void craftItem(AutoEnchantBlockEntity entity) {
-        SimpleInventory inventory = new SimpleInventory(entity.size());
-        for (int i = 0; i < entity.size(); i++) {
-            inventory.setStack(i, entity.getStack(i));
-        }
-
-        if(hasRecipe(entity)) {
-            entity.removeStack(1, 1);
-
-            entity.setStack(2, new ItemStack(ModItems.TESTITEM,
-                    entity.getStack(2).getCount() + 1));
-
-            entity.resetProgress();
-        }
-    }
-
-    private static boolean hasRecipe(AutoEnchantBlockEntity entity) {
-        SimpleInventory inventory = new SimpleInventory(entity.size());
-        for (int i = 0; i < entity.size(); i++) {
-            inventory.setStack(i, entity.getStack(i));
-        }
-
-        boolean hasRawGemInFirstSlot = entity.getStack(1).getItem() == ModItems.TESTITEM;
-
-        return hasRawGemInFirstSlot && canInsertAmountIntoOutputSlot(inventory, 1)
-                && canInsertItemIntoOutputSlot(inventory, ModItems.TESTITEM);
-    }
-
-    private static boolean canInsertItemIntoOutputSlot(SimpleInventory inventory, Item output) {
-        return inventory.getStack(2).getItem() == output || inventory.getStack(2).isEmpty();
-    }
-
-    private static boolean canInsertAmountIntoOutputSlot(SimpleInventory inventory, int count) {
-        return inventory.getStack(2).getMaxCount() > inventory.getStack(2).getCount() + count;
-    }
-
-    public ItemStack getRenderStack() {
-        if(this.getStack(2).isEmpty()) {
-            return this.getStack(1);
-        } else {
-            return this.getStack(2);
-        }
-    }
-
-    public void setInventory(DefaultedList<ItemStack> list) {
-        for (int i = 0; i < inventory.size(); i++) {
-            this.inventory.set(i, inventory.get(i));
-        }
-    }
 
     @Override
     public void markDirty() {
@@ -176,4 +83,14 @@ public class AutoEnchantBlockEntity extends BlockEntity implements NamedScreenHa
         }
         super.markDirty();
     }
+
+    public void addToInventory(ItemStack stack, BlockPos blockPos, BlockState blockState){
+        this.inventory.set(0, stack);
+        markDirty(world, blockPos, blockState);
+    }
+
+    public void popOutOfInventory(){
+        ItemScatterer.spawn(world, (double)pos.getX(), (double)pos.getY()+1, (double)pos.getZ(), this.inventory.get(0));
+    }
+
 }

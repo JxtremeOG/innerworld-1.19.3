@@ -6,6 +6,7 @@ import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.block.entity.CampfireBlockEntity;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.UnbreakingEnchantment;
@@ -72,64 +73,13 @@ public class AutoEnchantBlock extends BlockWithEntity implements BlockEntityProv
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof AutoEnchantBlockEntity) {
-                ItemScatterer.spawn(world, pos, (AutoEnchantBlockEntity)blockEntity);
+                ItemScatterer.spawn(world, pos, ((AutoEnchantBlockEntity)blockEntity).getItemsinTable());
                 world.updateComparators(pos,this);
             }
             super.onStateReplaced(state, world, pos, newState, moved);
         }
     }
 
-    Random random = new Random() {
-        @Override
-        public Random split() {
-            return null;
-        }
-
-        @Override
-        public RandomSplitter nextSplitter() {
-            return null;
-        }
-
-        @Override
-        public void setSeed(long seed) {
-
-        }
-
-        @Override
-        public int nextInt() {
-            return 0;
-        }
-
-        @Override
-        public int nextInt(int bound) {
-            return 0;
-        }
-
-        @Override
-        public long nextLong() {
-            return 0;
-        }
-
-        @Override
-        public boolean nextBoolean() {
-            return false;
-        }
-
-        @Override
-        public float nextFloat() {
-            return 0;
-        }
-
-        @Override
-        public double nextDouble() {
-            return 0;
-        }
-
-        @Override
-        public double nextGaussian() {
-            return 0;
-        }
-    };
     java.util.Random rn = new java.util.Random();
 
     /**
@@ -139,7 +89,8 @@ public class AutoEnchantBlock extends BlockWithEntity implements BlockEntityProv
     public ActionResult onUse(BlockState state, World world, BlockPos pos,
                               PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
-            if(hand == Hand.MAIN_HAND && player.getStackInHand(hand).isEnchantable() ){
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if(hand == Hand.MAIN_HAND && player.getStackInHand(hand).isEnchantable() && blockEntity instanceof AutoEnchantBlockEntity){
                 List list = Registries.ENCHANTMENT.stream().filter(Enchantment::isAvailableForEnchantedBookOffer).collect(Collectors.toList());
                 Enchantment enchantment = null;
                 while(enchantment == null || !(enchantment.isAcceptableItem(player.getStackInHand(hand)))){
@@ -155,11 +106,17 @@ public class AutoEnchantBlock extends BlockWithEntity implements BlockEntityProv
                 else if(enchantment.getMaxLevel() == 5)
                     maxLevel = 10;
 
+                AutoEnchantBlockEntity autoEnchantBlockEntity = (AutoEnchantBlockEntity)blockEntity;
+
                 player.getStackInHand(hand).addEnchantment(enchantment, rn.nextInt(maxLevel)+1);
-            }else {
+                autoEnchantBlockEntity.addToInventory(player.getMainHandStack().copy(), pos, state);
+                player.getMainHandStack().decrement(1);
+
+            } else {
                 if(player.getStackInHand(hand).hasEnchantments()){
                     System.out.println(player.getStackInHand(hand).getEnchantments());
                 }else {
+                    System.out.println(player.getStackInHand(hand));
                     System.out.println("Its not enchantable");
                 }
             }
